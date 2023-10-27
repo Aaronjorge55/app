@@ -1,0 +1,67 @@
+import tkinter as tk
+from tkinter import messagebox
+import time
+import threading
+import random
+import winsound
+import pyttsx3
+
+class Sensor:
+    def __init__(self):
+        self.running = False
+        self.short_circuit_listener = None
+        self.locations = ["Sala", "Cozinha", "Quarto", "Banheiro"]
+
+    def start_sensor(self):
+        self.running = True
+        while self.running:
+            time.sleep(5)  # Simulando o sensor a cada 5 segundos
+            if random.random() < 0.2:  # 20% de chance de curto-circuito
+                location = random.choice(self.locations)
+                if self.short_circuit_listener:
+                    self.short_circuit_listener(location)
+
+    def stop_sensor(self):
+        self.running = False
+
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Detector de Curto-Circuito")
+
+        self.sensor = Sensor()
+        self.sensor.short_circuit_listener = self.show_notification
+
+        self.label = tk.Label(root, text="Aguardando notificações do sensor...")
+        self.label.pack(pady=20)
+
+        self.start_button = tk.Button(root, text="Iniciar Sensor", command=self.start_sensor)
+        self.start_button.pack(pady=10)
+
+        self.stop_button = tk.Button(root, text="Parar Sensor", command=self.stop_sensor)
+        self.stop_button.pack(pady=10)
+
+    def start_sensor(self):
+        self.sensor_thread = threading.Thread(target=self.sensor.start_sensor)
+        self.sensor_thread.start()
+        self.label.config(text="Sensor em execução...")
+
+    def stop_sensor(self):
+        self.sensor.stop_sensor()
+        self.label.config(text="Sensor parado.")
+
+    def show_notification(self, location):
+        message = f"Curto-circuito detectado em {location}!"
+        messagebox.showwarning("Alerta de Curto-Circuito", message)
+        self.speak_message(message)
+        winsound.PlaySound("SystemExclamation", winsound.SND_ASYNC)
+
+    def speak_message(self, message):
+        engine = pyttsx3.init()
+        engine.say(message)
+        engine.runAndWait()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
